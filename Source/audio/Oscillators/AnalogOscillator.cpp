@@ -84,7 +84,7 @@ float AnalogOscillator::doSquare() {
 	float output_offset = linearInterpolation(
 	    m_current_table[read_index_trunc_offset], m_current_table[read_index_next_offset], fractional_offset);
 
-	incrementAndCheckWrapIndex(m_read_index, m_wavetable_inc);
+	incrementAndCheckWrapIndex(m_read_index, m_wavetable_inc * m_sync_anti_aliasing_inc_factor);
 
 	// bring duty modded to range [0,1] for scale calculation
 	duty_modded = fmod(duty_modded, 1);
