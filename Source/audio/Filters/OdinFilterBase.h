@@ -17,6 +17,7 @@
 
 #include "../../GlobalIncludes.h"
 #include "../JuceLibraryCode/JuceHeader.h"
+#include "Downsampler.h"
 #include <cmath>
 
 #define FILTER_FC_MIN 20        // 80Hz
@@ -64,14 +65,30 @@ public:
 	}
 
 	inline void applyOverdrive(double &pio_input, float p_tanh_factor = 3.5f) {
+		const auto input = pio_input;
+
+		const auto OverSample = [&](const auto &F) {
+			double upsampled[3] = {0.66666666 * m_overdrive_last_input + 0.33333333 * input,
+			                             0.33333333 * m_overdrive_last_input + 0.66666666 * input,
+			                             input};
+			for (int sample = 0; sample < 3; ++sample) {
+				upsampled[sample] = F(upsampled[sample]);
+			}
+			m_downsampler.doFilter(upsampled[0]);
+			m_downsampler.doFilter(upsampled[1]);
+			return m_downsampler.doFilter(upsampled[2]);
+		};
+
 		float overdrive_modded = m_overdrive + 2 * (*m_saturation_mod);
 		overdrive_modded       = overdrive_modded < 0 ? 0 : overdrive_modded;
 		if (overdrive_modded > 0.01f && overdrive_modded < 1.f) {
 			// interpolate here so we have possibility of pure linear Processing
-			pio_input = pio_input * (1. - overdrive_modded) + overdrive_modded * fasttanh(pio_input, p_tanh_factor);
+			pio_input = OverSample([&](float sample) { return sample * (1. - overdrive_modded) + overdrive_modded * fasttanh(sample, p_tanh_factor); });
 		} else if (overdrive_modded >= 1.f) {
-			pio_input = fasttanh(overdrive_modded * pio_input, p_tanh_factor);
+			pio_input = OverSample([&](float sample) { return fasttanh(overdrive_modded * sample, p_tanh_factor); });
 		}
+
+		m_overdrive_last_input = input;
 	}
 
 	virtual void setFreqModPointer(float *p_pointer);
@@ -112,4 +129,7 @@ protected:
 	double m_one_over_samplerate;
 	double m_freq_modded = FILTER_FC_DEFAULT;
 	double m_res_modded  = FILTER_Q_DEFAULT;
+
+	double m_overdrive_last_input;
+	Downsampler3x<double> m_downsampler;
 };
