@@ -130,6 +130,8 @@ struct ModDestVoice {
   ModDestLFO lfo[3];
   ModDestAmp amp;
   ModDestDistortion distortion;
+  float pitch_linear;
+  float pitch_exponential;
 };
 
 struct ModDestinations {

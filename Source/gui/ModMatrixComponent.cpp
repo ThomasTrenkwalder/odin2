@@ -215,6 +215,9 @@ ModMatrixComponent::ModMatrixComponent(AudioProcessorValueTreeState &vts) :
 	m_distortion_menu.addItem(950, "Distortion Boost");
 	m_distortion_menu.addItem(951, "Distortion DryWet");
 
+	m_pitch_menu.addItem(960, "Pitch Exp");
+	m_pitch_menu.addItem(961, "Pitch Lin");
+
 	m_arp_menu.addItem(970, "Arp Speed");
 	m_arp_menu.addItem(973, "Arp Gate");
 
@@ -889,6 +892,7 @@ void ModMatrixComponent::createMenu(PopupMenu *p_menu) {
 
 	p_menu->addSubMenu("Amplifier", m_amp_menu, true);
 	p_menu->addSubMenu("Distortion", m_distortion_menu, true);
+	p_menu->addSubMenu("Pitch", m_pitch_menu, true);
 
 	p_menu->addSeparator();
 

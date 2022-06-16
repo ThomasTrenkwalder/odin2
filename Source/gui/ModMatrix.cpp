@@ -985,6 +985,18 @@ void ModMatrixRow::setModDestination(int p_destination,
 			p_dest_poly               = true;
 		}
 		break;
+	case 960:
+		for (int voice = 0; voice < VOICES; ++voice) {
+			p_destination_pointers[voice] = &(m_destinations->voice[voice].pitch_exponential);
+			p_dest_poly                   = true;
+		}
+		break;
+	case 961:
+		for (int voice = 0; voice < VOICES; ++voice) {
+			p_destination_pointers[voice] = &(m_destinations->voice[voice].pitch_linear);
+			p_dest_poly                   = true;
+		}
+		break;
 	case 970:
 		p_destination_pointers[0] = &(m_destinations->arp.speed);
 		p_dest_poly               = false;
@@ -1069,6 +1081,12 @@ void ModMatrix::applyModulation() {
 	for (int row = 0; row < MODMATRIX_ROWS; ++row) {
 		if (m_row[row]) {
 			m_row[row].applyModulation();
+		}
+	}
+	for (int voice = 0; voice < VOICES; ++voice) {
+		for (int osc = 0; osc < 3; ++osc) {
+			m_destinations->voice[voice].osc[osc].pitch_exponential += m_destinations->voice[voice].pitch_exponential;
+			m_destinations->voice[voice].osc[osc].pitch_linear += m_destinations->voice[voice].pitch_linear;
 		}
 	}
 }

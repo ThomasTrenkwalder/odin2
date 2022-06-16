@@ -158,6 +158,7 @@ private:
   PopupMenu m_lfo_menu[4];
   PopupMenu m_amp_menu;
   PopupMenu m_distortion_menu;
+  PopupMenu m_pitch_menu;
   PopupMenu m_delay_menu;
   PopupMenu m_phaser_menu;
   PopupMenu m_flanger_menu;
