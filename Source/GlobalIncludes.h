@@ -45,9 +45,10 @@
 #define ODIN_VERSION_STRING ("Odin 2." + std::to_string(ODIN_MINOR_VERSION) + "." + std::to_string(ODIN_PATCH_VERSION))
 
 // ! this is for migrating patches from older version, not to be confused with above
-#define ODIN_PATCH_MIGRATION_VERSION 5
+#define ODIN_PATCH_MIGRATION_VERSION 6
 //1 -> 2: replaced "amp width" by "amp velocity"
 //2 -> 3: made carrier and modulator ratio, as well as pitchbend amount nonaudio values (but wrote migration code)
+//5 -> 6: analog osc square wave: adjusted overall volume and pulse width volume scaling, fixed pitch when synced
 
 #define DBG_VAR(var) DBG(#var << ": " << var)
 

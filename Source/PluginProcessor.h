@@ -93,7 +93,7 @@ public:
 	void setFXButtonsPosition(int p_delay, int p_phaser, int p_flanger, int p_chorus, int p_reverb);
 	void attachNonParamListeners();
 	void migratePatch(ValueTree &p_patch);
-	void readPatch(const ValueTree &newState);
+	void readPatch(const ValueTree &newState, bool isInit = false);
 
 	std::function<void()> onSetStateInformation    = []() {};
 	std::function<void(float)> updatePitchWheelGUI = [](float p_value) {};

@@ -19,35 +19,42 @@
 
 // read patch by iterating over all attritubes,
 // setting them if they are available and setting to default if not
-void OdinAudioProcessor::readPatch(const ValueTree &newState) {
+void OdinAudioProcessor::readPatch(const ValueTree &newState, bool isInit) {
 	//DBG(newStateMigrated.toXmlString());
-
-	//create deep copy for modification
-	auto newStateMigrated = newState.createCopy();
-
-	migratePatch(newStateMigrated);
 
 //avoid compiler warning unused variable
 #if (JUCE_DEBUG && !JUCE_DISABLE_ASSERTIONS) || DOXYGEN
-	int patch_version = newStateMigrated.getChildWithName("misc")["version_patch"];
-	int minor_version = newStateMigrated.getChildWithName("misc")["version_minor"];
+	int patch_version = newState.getChildWithName("misc")["version_patch"];
+	int minor_version = newState.getChildWithName("misc")["version_minor"];
 #endif
-	int patch_migration_version = newStateMigrated.getChildWithName("misc")["patch_migration_version"];
+	int patch_migration_version = newState.getChildWithName("misc")["patch_migration_version"];
 
 	DBG("Read patch from version 2." + std::to_string(minor_version) + "." + std::to_string(patch_version) +
 	    ", current version is: 2." + std::to_string(ODIN_MINOR_VERSION) + "." + std::to_string(ODIN_PATCH_VERSION));
 	DBG("Read patch migration version " + std::to_string(patch_migration_version) + ", current version is " +
 	    std::to_string(ODIN_PATCH_MIGRATION_VERSION));
 
-	if (patch_migration_version < ODIN_PATCH_MIGRATION_VERSION) {
+	if (patch_migration_version < ODIN_PATCH_MIGRATION_VERSION && !isInit) {
 		DBG("Preset seems to be from older version... loading init priset first...");
 
 		// replace stream with patch from binary data
 		MemoryInputStream init_stream(BinaryData::init_patch_odin, BinaryData::init_patch_odinSize, false);
-		readPatch(ValueTree::readFromStream(init_stream));
-
+		// passing true here stops us from running into endless recursion that happens when the init patch doesn't have up-to-date patch migration version yet.
+		readPatch(ValueTree::readFromStream(init_stream), /*isInit*/ true);
 		DBG("Done loading init patch");
 	}
+
+	//create deep copy for modification
+	// moved this code below the checks above so we can easily do migration INCLUDING setting new version info.
+	// not setting the new patch migration version caused a bug:
+	//     press "Reset Synth" (or load any old preset such as factory presets), edit values, restore daw session
+	//     -> this would AGAIN perform migration on restore due to incorrect patch migration version.
+	// i think loading an old preset also set the current patch migration version to an old one - causing the migration to happen again next time.
+	auto newStateMigrated = newState.createCopy();
+	migratePatch(newStateMigrated);
+	newStateMigrated.getChildWithName("misc").setProperty("patch_migration_version", ODIN_PATCH_MIGRATION_VERSION, nullptr);
+	newStateMigrated.getChildWithName("misc").setProperty("version_patch", ODIN_PATCH_VERSION, nullptr);
+	newStateMigrated.getChildWithName("misc").setProperty("version_minor", ODIN_MINOR_VERSION, nullptr);
 
 	const ValueTree &draw_tree = newStateMigrated.getChildWithName("draw");
 
@@ -157,6 +164,70 @@ void OdinAudioProcessor::readPatch(const ValueTree &newState) {
 	}
 
 	setMonoPolyLegato(VALUETREETOPLAYMODE((int)m_value_tree.state.getChildWithName("misc")["legato"]));
+
+	// note: this code works well but would seem more appropriate inside the migratePatch method.
+	//       however, i didn't quite understand yet how data even goes into the m_value_tree etc so couldn't get this to work any other way.
+	if (patch_migration_version < 6) {
+		for (int osc = 0; osc < 3; ++osc) {
+			const auto OscParamId = [osc](const char *suffix) {
+				const auto Str = "osc" + std::to_string(osc + 1) + "_" + suffix;
+				return juce::Identifier(Str.c_str());
+			};
+
+			// change only affects analog osc square waves.
+			if (m_value_tree_osc.getProperty(OscParamId("type")) == juce::var(OSC_TYPE_ANALOG) &&
+			    m_value_tree_osc.getProperty(OscParamId("analog_wave")) == juce::var(1)) {
+
+				// compensate for volume changes
+				// note: there can be rare cases where oscillator volume would be modulated beyond the maximum and therefore clamped.
+				//       in that case the change results in different behavior of an existing preset.
+				{
+					const auto volumeParam       = m_value_tree.getParameter(OscParamId("vol"));
+					const auto &volumeParamRange = volumeParam->getNormalisableRange();
+					const auto currentDb         = volumeParamRange.convertFrom0to1(volumeParam->getValue());
+
+					// overall fixed volume change
+					const auto overallAdjustmentDb = Decibels::gainToDecibels(0.3f);
+
+					// pulse width volume scaling change
+					// note: this can only compensate for static pulse widths, so without PWM there is no audible change to a preset.
+					//       however, if really noticeable amounts of PWM are used the change can result in slightly different behavior of an existing preset.
+					const auto pulseWidth01   = m_value_tree.getParameter(OscParamId("pulsewidth"))->getValue();
+					const auto Lerp           = [](float a, float b, float x) { return a * (1.f - x) + b * x; };
+					const auto adjustFactor01 = pow(abs(2.f * (pulseWidth01 - 0.5f)), 1.18f); // pow works well to make the adjustment pretty consistent across all PW values.
+					const auto pulseWidthAdjustmentDb =
+					    Decibels::gainToDecibels(Lerp(1.f, (2.f / 0.75f), adjustFactor01));
+
+					const auto finalDb = currentDb + overallAdjustmentDb + pulseWidthAdjustmentDb;
+					volumeParam->setValueNotifyingHost(volumeParamRange.convertTo0to1(finalDb));
+				}
+
+				// fix pitch if sync was active
+				if (osc != 0 && m_value_tree.getParameter(OscParamId("sync"))->getValue() > 0.f) {
+					// the fix for incorrect oscillator frequency reduces it from 3x to the desired frequency.
+					// so we need to increase the pitch to make the preset sound like before.
+
+					const auto octParam       = m_value_tree.getParameter(OscParamId("oct"));
+					const auto &octParamRange = octParam->getNormalisableRange();
+					const auto octCurrent     = octParamRange.convertFrom0to1(octParam->getValue());
+
+					const auto semiParam       = m_value_tree.getParameter(OscParamId("semi"));
+					const auto &semiParamRange = semiParam->getNormalisableRange();
+					const auto semiCurrent     = semiParamRange.convertFrom0to1(semiParam->getValue());
+
+					// pick correct way to increase pitch so semi parameter stays inside valid range
+					// octave parameter could go out of range but that's unlikely: without the fix, oscillator pitch was already way too high
+					if (semiCurrent <= 0.f) {
+						octParam->setValueNotifyingHost(octParamRange.convertTo0to1(octCurrent + 1.f));
+						semiParam->setValueNotifyingHost(semiParamRange.convertTo0to1(semiCurrent + 7.f));
+					} else {
+						octParam->setValueNotifyingHost(octParamRange.convertTo0to1(octCurrent + 2.f));
+						semiParam->setValueNotifyingHost(semiParamRange.convertTo0to1(semiCurrent - 5.f));
+					}
+				}
+			}
+		}
+	}
 }
 
 bool OdinAudioProcessor::checkLoadParameter(const String &p_name) {
