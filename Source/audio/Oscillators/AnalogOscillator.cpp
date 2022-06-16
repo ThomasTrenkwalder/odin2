@@ -16,8 +16,6 @@
 #include "AnalogOscillator.h"
 #include <cstdlib>
 
-#define SQUARE_VOLUME_SCALAR 0.3
-
 #define DRIFT_NOISE_SMOOTH_FACTOR 0.0001
 
 AnalogOscillator::AnalogOscillator() {
@@ -90,8 +88,12 @@ float AnalogOscillator::doSquare() {
 	duty_modded = fmod(duty_modded, 1);
 
 #define MAX(a, b) (a) > (b) ? (a) : (b)
+#define MIN(a, b) (a) < (b) ? (a) : (b)
 
-	float square_scale = 2 * (MAX(1 - duty_modded, duty_modded));
+	//float square_scale = 2 * (MAX(1 - duty_modded, duty_modded)); // makes narrow pulse widths extremely loud
+	//float square_scale = 1.f; // narrow pulse widths still loud but not that much
+	//float square_scale = 0.5f + (MIN(1 - duty_modded, duty_modded)); // narrow pulse widths feel a little weak now
+	float square_scale = 0.5f + 0.5f * (0.5f + (MIN(1 - duty_modded, duty_modded))); // feels balanced
 
-	return (output - output_offset) * square_scale * SQUARE_VOLUME_SCALAR;
+	return (output - output_offset) * square_scale;
 }
