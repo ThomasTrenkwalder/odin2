@@ -137,7 +137,7 @@
 	    std::make_unique<AudioParameterFloat>(
 	        "fil1_vel", "Filter1 Velocity Amount", NormalisableRange<float>(0.f, 1.f), 0.f),
 	    std::make_unique<AudioParameterFloat>(
-	        "fil1_env", "Filter1 Envelope Amount", NormalisableRange<float>(-1.f, 1.f), 0.f),
+	        "fil1_env", "Filter1 Envelope Amount", NormalisableRange<float>(ENV_MIN, ENV_MAX), 0.f),
 	    std::make_unique<AudioParameterFloat>(
 	        "fil1_kbd", "Filter1 Keyboard Follow", NormalisableRange<float>(0.f, 1.f), 0.f),
 	    std::make_unique<AudioParameterFloat>("fil1_gain", "Filter1 Gain", NormalisableRange<float>(-60.f, 12.f), 0.f),
@@ -161,7 +161,7 @@
 	    std::make_unique<AudioParameterFloat>(
 	        "fil2_vel", "Filter2 Velocity Amount", NormalisableRange<float>(0.f, 1.f), 0.f),
 	    std::make_unique<AudioParameterFloat>(
-	        "fil2_env", "Filter2 Envelope Amount", NormalisableRange<float>(-1.f, 1.f), 0.f),
+	        "fil2_env", "Filter2 Envelope Amount", NormalisableRange<float>(ENV_MIN, ENV_MAX), 0.f),
 	    std::make_unique<AudioParameterFloat>(
 	        "fil2_kbd", "Filter2 Keyboard Follow", NormalisableRange<float>(0.f, 1.f), 0.f),
 	    std::make_unique<AudioParameterFloat>("fil2_gain", "Filter2 Gain", NormalisableRange<float>(-60.f, 12.f), 0.f),
@@ -182,7 +182,7 @@
 	    std::make_unique<AudioParameterFloat>(
 	        "fil3_vel", "Filter3 Velocity Amount", NormalisableRange<float>(0.f, 1.f), 0.f),
 	    std::make_unique<AudioParameterFloat>(
-	        "fil3_env", "Filter3 Envelope Amount", NormalisableRange<float>(-1.f, 1.f), 0.f),
+	        "fil3_env", "Filter3 Envelope Amount", NormalisableRange<float>(ENV_MIN, ENV_MAX), 0.f),
 	    std::make_unique<AudioParameterFloat>(
 	        "fil3_kbd", "Filter3 Keyboard Follow", NormalisableRange<float>(0.f, 1.f), 0.f),
 	    std::make_unique<AudioParameterFloat>("fil3_gain", "Filter3 Gain", NormalisableRange<float>(-60.f, 12.f), 0.f),

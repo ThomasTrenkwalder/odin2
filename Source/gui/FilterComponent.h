@@ -63,8 +63,8 @@
 #define FREQ_MAX 20000
 #define FREQ_MID 640
 
-#define ENV_MIN -1
-#define ENV_MAX 1
+#define ENV_MIN -2
+#define ENV_MAX 2
 #define ENV_DEFAULT 0
 #define ENV_SKEW 0.7
 
