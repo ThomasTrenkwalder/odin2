@@ -30,14 +30,10 @@ void WavetableOsc1D::reset() {
 	Oscillator::reset();
 
 	m_read_index = 0.0;
+	m_downsampler.reset();
 	m_dc_blocking_filter.reset();
 
 	//DBG("reset WT");
-
-	// downsampling filter buffers
-	for (int i = 0; i < 10; ++i) {
-		xv[i] = yv[i] = 0;
-	}
 }
 
 void WavetableOsc1D::update() {
@@ -161,99 +157,25 @@ float WavetableOsc1D::doOscillateWithSync() {
 	if (m_sync_enabled && m_sync_oscillator) {
 		m_sync_anti_aliasing_inc_factor = 0.3333333f;
 
-		float input_upsampled[3];
-		{
-			if (m_sync_oscillator->m_reset_flag) {
-				float step_fraction_left_until_sync = 1.f - m_sync_oscillator->m_reset_stepfrac;
+		float tmp;
+		if (m_sync_oscillator->m_reset_flag) {
+			float step_fraction_left_until_sync = 1.f - m_sync_oscillator->m_reset_stepfrac;
 
-				for (int i = 0; i < 3; ++i) {
-					if (step_fraction_left_until_sync < m_sync_anti_aliasing_inc_factor) {
-						initiateSync(m_sync_anti_aliasing_inc_factor * i);
-						step_fraction_left_until_sync = 2.f; // more than 1 so it won't trigger again for sure ..
-					}
-					step_fraction_left_until_sync -= m_sync_anti_aliasing_inc_factor;
-					input_upsampled[i] = doOscillate();
+			for (int i = 0; i < 3; ++i) {
+				if (step_fraction_left_until_sync < m_sync_anti_aliasing_inc_factor) {
+					initiateSync(m_sync_anti_aliasing_inc_factor * i);
+					step_fraction_left_until_sync = 2.f; // more than 1 so it won't trigger again for sure ..
 				}
-			} else {
-				for (int i = 0; i < 3; ++i) {
-					input_upsampled[i] = doOscillate();
-				}
+				step_fraction_left_until_sync -= m_sync_anti_aliasing_inc_factor;
+				tmp = m_downsampler.doFilter(doOscillate());
+			}
+		} else {
+			for (int i = 0; i < 3; ++i) {
+				tmp = m_downsampler.doFilter(doOscillate());
 			}
 		}
 
-		xv[0] = xv[1];
-		xv[1] = xv[2];
-		xv[2] = xv[3];
-		xv[3] = xv[4];
-		xv[4] = xv[5];
-		xv[5] = xv[6];
-		xv[6] = xv[7];
-		xv[7] = xv[8];
-		xv[8] = xv[9];
-		xv[9] = input_upsampled[0] * 0.019966841051093;
-		yv[0] = yv[1];
-		yv[1] = yv[2];
-		yv[2] = yv[3];
-		yv[3] = yv[4];
-		yv[4] = yv[5];
-		yv[5] = yv[6];
-		yv[6] = yv[7];
-		yv[7] = yv[8];
-		yv[8] = yv[9];
-		yv[9] = (xv[0] + xv[9]) + 9 * (xv[1] + xv[8]) + 36 * (xv[2] + xv[7]) + 84 * (xv[3] + xv[6]) +
-		        126 * (xv[4] + xv[5]) + (-0.0003977153 * yv[0]) + (-0.0064474617 * yv[1]) + (-0.0476997403 * yv[2]) +
-		        (-0.2185829743 * yv[3]) + (-0.6649234123 * yv[4]) + (-1.4773657709 * yv[5]) + (-2.2721421641 * yv[6]) +
-		        (-2.6598673212 * yv[7]) + (-1.8755960587 * yv[8]);
-		// next output value = yv[9];
-		xv[0] = xv[1];
-		xv[1] = xv[2];
-		xv[2] = xv[3];
-		xv[3] = xv[4];
-		xv[4] = xv[5];
-		xv[5] = xv[6];
-		xv[6] = xv[7];
-		xv[7] = xv[8];
-		xv[8] = xv[9];
-		xv[9] = input_upsampled[1] * 0.019966841051093;
-		yv[0] = yv[1];
-		yv[1] = yv[2];
-		yv[2] = yv[3];
-		yv[3] = yv[4];
-		yv[4] = yv[5];
-		yv[5] = yv[6];
-		yv[6] = yv[7];
-		yv[7] = yv[8];
-		yv[8] = yv[9];
-		yv[9] = (xv[0] + xv[9]) + 9 * (xv[1] + xv[8]) + 36 * (xv[2] + xv[7]) + 84 * (xv[3] + xv[6]) +
-		        126 * (xv[4] + xv[5]) + (-0.0003977153 * yv[0]) + (-0.0064474617 * yv[1]) + (-0.0476997403 * yv[2]) +
-		        (-0.2185829743 * yv[3]) + (-0.6649234123 * yv[4]) + (-1.4773657709 * yv[5]) + (-2.2721421641 * yv[6]) +
-		        (-2.6598673212 * yv[7]) + (-1.8755960587 * yv[8]);
-		// next output value = yv[9];
-		xv[0] = xv[1];
-		xv[1] = xv[2];
-		xv[2] = xv[3];
-		xv[3] = xv[4];
-		xv[4] = xv[5];
-		xv[5] = xv[6];
-		xv[6] = xv[7];
-		xv[7] = xv[8];
-		xv[8] = xv[9];
-		xv[9] = input_upsampled[2] * 0.019966841051093;
-		yv[0] = yv[1];
-		yv[1] = yv[2];
-		yv[2] = yv[3];
-		yv[3] = yv[4];
-		yv[4] = yv[5];
-		yv[5] = yv[6];
-		yv[6] = yv[7];
-		yv[7] = yv[8];
-		yv[8] = yv[9];
-		yv[9] = (xv[0] + xv[9]) + 9 * (xv[1] + xv[8]) + 36 * (xv[2] + xv[7]) + 84 * (xv[3] + xv[6]) +
-		        126 * (xv[4] + xv[5]) + (-0.0003977153 * yv[0]) + (-0.0064474617 * yv[1]) + (-0.0476997403 * yv[2]) +
-		        (-0.2185829743 * yv[3]) + (-0.6649234123 * yv[4]) + (-1.4773657709 * yv[5]) + (-2.2721421641 * yv[6]) +
-		        (-2.6598673212 * yv[7]) + (-1.8755960587 * yv[8]);
-
-		return m_dc_blocking_filter.doFilter(yv[9]);
+		return m_dc_blocking_filter.doFilter(tmp);
 
 	} else {
 		// either sync off or syncosc not set:

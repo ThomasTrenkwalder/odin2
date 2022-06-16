@@ -16,6 +16,7 @@
 #pragma once
 #include "WavetableOsc1D.h"
 #include "ChiptuneArpeggiator.h"
+#include "../Filters/Downsampler.h"
 #include <cstdlib>
 
 
@@ -89,8 +90,6 @@ public:
     bool m_generate_noise = false; //set when noise should be generated
     float m_last_noise_value = 0.0;
 
-    //buffer elements for downsampling filter in noise generation
-    float xv[10];
-    float yv[10];
+    Downsampler3x<float> m_downsampler;
 };
 

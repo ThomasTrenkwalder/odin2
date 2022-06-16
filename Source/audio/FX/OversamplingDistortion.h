@@ -15,6 +15,8 @@
 
 #pragma once
 
+#include "../Filters/Downsampler.h"
+
 #define THRESHOLD_MIN 0.05f
 #define DISTORTION_OUTPUT_SCALAR 1.0
 
@@ -49,10 +51,8 @@ public:
   void setDryWetModPointer(float *p_pointer) { m_drywet_mod = p_pointer; }
 
   void reset() {
-    for (int i = 0; i < 10; ++i) {
-      xv[i] = yv[i] = 0;
-    }
-    m_threshold_smooth = m_threshold;
+	  m_downsampler.reset();
+	  m_threshold_smooth = m_threshold;
   }
 
 protected:
@@ -68,9 +68,5 @@ protected:
   float m_threshold_smooth = 0.343f; //(1-0.3)^3
   float m_drywet = 1.f;
 
-  // IIR Filter buffers for downsampling
-  // coefficients (see implementation) are taken from
-  // http://www-users.cs.york.ac.uk/~fisher/cgi-bin/mkfscript
-  double xv[10] = {0.};
-  double yv[10] = {0.};
+  Downsampler3x<double> m_downsampler;
 };

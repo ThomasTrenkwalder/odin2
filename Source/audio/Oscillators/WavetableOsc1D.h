@@ -15,6 +15,7 @@
 
 #pragma once
 #include "../Filters/DCBlockingFilter.h"
+#include "../Filters/Downsampler.h"
 #include "../OdinConstants.h"
 #include "Oscillator.h"
 #include "WavetableContainer.h"
@@ -69,7 +70,9 @@ public:
 
 	void setSampleRate(float p_sr) override {
 		Oscillator::setSampleRate(p_sr);
+		m_downsampler.reset();
 		m_dc_blocking_filter.setSampleRate(p_sr);
+		m_dc_blocking_filter.reset();
 	}
 
 	void setWavetableContainer(WavetableContainer *p_WT_container) {
@@ -108,6 +111,7 @@ protected:
 	float doWavetable();
 
 	// for sync
+	Downsampler3x<float> m_downsampler;
 	DCBlockingFilter m_dc_blocking_filter;
 
 	bool m_sync_enabled = false;
@@ -119,10 +123,6 @@ protected:
 
 	Oscillator *m_sync_oscillator         = nullptr;
 	float m_sync_anti_aliasing_inc_factor = 1.f;
-
-	// downsampling filter (see distortion for details)
-	double xv[10] = {0.};
-	double yv[10] = {0.};
 
 	// tables
 	const float *m_wavetable_pointers[NUMBER_OF_WAVETABLES + 9] //+ 9 for drawtables
