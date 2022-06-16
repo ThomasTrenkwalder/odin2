@@ -77,7 +77,7 @@ public:
 	}
 
 protected:
-	virtual void initiateSync();
+	virtual void initiateSync(float addfract);
 
 	virtual int getTableIndex();
 
@@ -90,8 +90,8 @@ protected:
 		return p_distance * (p_high - p_low) + p_low;
 	}
 
-	inline void checkWrapIndex(double &p_index) {
-
+	inline void incrementAndCheckWrapIndex(double &p_index, double inc) {
+		p_index += inc;
 		m_reset_flag = false;
 
 		while (p_index < 0) {
@@ -101,7 +101,7 @@ protected:
 		while (p_index >= WAVETABLE_LENGTH) {
 			p_index -= WAVETABLE_LENGTH;
 			m_reset_flag     = true;
-			m_reset_position = p_index;
+			m_reset_stepfrac = p_index / inc;
 		}
 	}
 

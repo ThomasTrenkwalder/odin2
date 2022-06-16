@@ -84,7 +84,7 @@ float FMOscillator::doOscillate() {
 
 	m_reset_flag = m_carrier_osc.m_reset_flag;
 	if (m_reset_flag) {
-		m_reset_position = m_carrier_osc.m_reset_position;
+		m_reset_stepfrac = m_carrier_osc.m_reset_stepfrac;
 	}
 
 	return out;

@@ -95,8 +95,8 @@ public:
 	void setUnisonDetuneFactorPointer(float *p_pointer);
 
 	bool m_reset_flag      = false; // this is used by other oscs to know when to sync
-	float m_reset_position = 0.f;   //this is used by other oscs to know which pos to sync to
-	bool m_reset_active    = false;
+	float m_reset_stepfrac = 0.f; // [0, 1[ .. how far in the past the reset event happened, as ratio of phase-increment. used by other oscs to calculate their sync position.
+	bool m_reset_active = false;
 	double m_osc_freq_glide_target; // the target freq after glide from MIDI note
 	double m_osc_freq_base;         // oscillator frequency which glides towards glide target
 	double m_increment;             // phase inc = fo/fs

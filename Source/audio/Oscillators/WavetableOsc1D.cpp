@@ -86,8 +86,7 @@ float WavetableOsc1D::doWavetable() {
 	// do linear interpolation
 	float output = linearInterpolation(m_current_table[read_index_trunc], m_current_table[read_index_next], fractional);
 
-	m_read_index += m_wavetable_inc * m_sync_anti_aliasing_inc_factor;
-	checkWrapIndex(m_read_index);
+	incrementAndCheckWrapIndex(m_read_index, m_wavetable_inc * m_sync_anti_aliasing_inc_factor);
 
 	return output;
 }
@@ -151,8 +150,8 @@ void WavetableOsc1D::loadChipdrawTables(int p_osc) {
 	m_nr_of_wavetables = 1;
 }
 
-void WavetableOsc1D::initiateSync() {
-	m_read_index = m_sync_oscillator->m_reset_position;
+void WavetableOsc1D::initiateSync(float addfract) {
+	m_read_index = m_wavetable_inc * (m_sync_oscillator->m_reset_stepfrac + addfract);
 }
 
 float WavetableOsc1D::doOscillateWithSync() {
@@ -160,13 +159,27 @@ float WavetableOsc1D::doOscillateWithSync() {
 
 	// do sync shit: 3x oversampling for AA
 	if (m_sync_enabled && m_sync_oscillator) {
-		// check if a new reset flag was set:
-		if (m_sync_oscillator->m_reset_flag) {
-			initiateSync();
-		}
 		m_sync_anti_aliasing_inc_factor = 0.3333333f;
 
-		float input_upsampled[3] = {doOscillate(), doOscillate(), doOscillate()};
+		float input_upsampled[3];
+		{
+			if (m_sync_oscillator->m_reset_flag) {
+				float step_fraction_left_until_sync = 1.f - m_sync_oscillator->m_reset_stepfrac;
+
+				for (int i = 0; i < 3; ++i) {
+					if (step_fraction_left_until_sync < m_sync_anti_aliasing_inc_factor) {
+						initiateSync(m_sync_anti_aliasing_inc_factor * i);
+						step_fraction_left_until_sync = 2.f; // more than 1 so it won't trigger again for sure ..
+					}
+					step_fraction_left_until_sync -= m_sync_anti_aliasing_inc_factor;
+					input_upsampled[i] = doOscillate();
+				}
+			} else {
+				for (int i = 0; i < 3; ++i) {
+					input_upsampled[i] = doOscillate();
+				}
+			}
+		}
 
 		xv[0] = xv[1];
 		xv[1] = xv[2];

@@ -83,8 +83,7 @@ float VectorOscillator::doVectortable() {
 	output[0] = (1.f - x_modded) * output[0] + x_modded * output[3];
 	output[1] = (1.f - x_modded) * output[1] + x_modded * output[2];
 
-	m_read_index += m_wavetable_inc * m_sync_anti_aliasing_inc_factor;
-	checkWrapIndex(m_read_index);
+	incrementAndCheckWrapIndex(m_read_index, m_wavetable_inc * m_sync_anti_aliasing_inc_factor);
 
 	// return interpolation between "upper" and "lower"
 	return (1.f - y_modded) * output[0] + y_modded * output[1];

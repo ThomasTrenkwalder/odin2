@@ -80,9 +80,8 @@ class PMCarrierOsc : public WavetableOsc1D {
     // do linear interpolation 
     float output = linearInterpolation(m_current_table[read_index_trunc], m_current_table[read_index_next], fractional);
 
-    m_read_index += m_wavetable_inc;
-    checkWrapIndex(m_read_index);
-    return output;
+	incrementAndCheckWrapIndex(m_read_index, m_wavetable_inc);
+	return output;
   }
 
 

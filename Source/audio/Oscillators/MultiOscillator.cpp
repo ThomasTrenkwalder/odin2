@@ -142,8 +142,7 @@ float MultiOscillator::doWavetableMulti() {
 		                        m_current_table_2D_multi[osc][right_table_multi[osc]][read_index_next_multi[osc]],
 		                        fractional_multi[osc]);
 
-		m_read_index_multi[osc] += m_wavetable_inc_multi[osc];
-		checkWrapIndex(m_read_index_multi[osc]);
+		incrementAndCheckWrapIndex(m_read_index_multi[osc], m_wavetable_inc_multi[osc]);
 
 		output += (1.f - interpolation_value_multi[osc]) * output_left_multi[osc] +
 		          interpolation_value_multi[osc] * output_right_multi[osc];

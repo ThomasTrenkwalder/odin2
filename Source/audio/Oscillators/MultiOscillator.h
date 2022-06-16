@@ -57,13 +57,13 @@ public:
 	
 protected:
 	
-	void initiateSync() override {
-		for (int subosc = 0; subosc < OSCS_PER_MULTIOSC; ++subosc){
-			m_read_index_multi[subosc] = 0;
+	void initiateSync(float addfract) override {
+		const auto x = m_sync_oscillator->m_reset_stepfrac * m_wavetable_inc + (addfract * m_wavetable_inc);
+		for (int subosc = 0; subosc < OSCS_PER_MULTIOSC; ++subosc) {
+			m_read_index_multi[subosc] = x;
 		}
-		m_read_index = 0;
+		m_read_index = x;
 	}
-
 
 	float* m_detune_mod;
 	float* m_spread_mod;

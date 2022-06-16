@@ -67,8 +67,8 @@ float AnalogOscillator::doSquare() {
 
 	float duty_modded = (m_duty_smooth + (*pwm_mod) / 2);
 
-	double read_index_offset = m_read_index + duty_modded * WAVETABLE_LENGTH;
-	checkWrapIndex(read_index_offset);
+	double read_index_offset = m_read_index;
+	incrementAndCheckWrapIndex(read_index_offset, duty_modded * WAVETABLE_LENGTH);
 
 	int read_index_trunc        = (int)m_read_index;
 	int read_index_trunc_offset = (int)(read_index_offset);
@@ -84,8 +84,7 @@ float AnalogOscillator::doSquare() {
 	float output_offset = linearInterpolation(
 	    m_current_table[read_index_trunc_offset], m_current_table[read_index_next_offset], fractional_offset);
 
-	m_read_index += m_wavetable_inc;
-	checkWrapIndex(m_read_index);
+	incrementAndCheckWrapIndex(m_read_index, m_wavetable_inc);
 
 	// bring duty modded to range [0,1] for scale calculation
 	duty_modded = fmod(duty_modded, 1);

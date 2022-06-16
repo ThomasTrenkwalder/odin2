@@ -1004,8 +1004,7 @@ float WavetableOsc2D::doWavetable2D() {
 	                                         m_current_table_2D[right_table][read_index_next],
 	                                         fractional);
 
-	m_read_index += m_wavetable_inc * m_sync_anti_aliasing_inc_factor;
-	checkWrapIndex(m_read_index);
+	incrementAndCheckWrapIndex(m_read_index, m_wavetable_inc * m_sync_anti_aliasing_inc_factor);
 
 	return (1.f - interpolation_value) * output_left + interpolation_value * output_right;
 }
